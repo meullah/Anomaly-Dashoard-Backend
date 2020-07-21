@@ -65,7 +65,7 @@ class Patient_EncouterRecords(Resource):
                 res = mr.getPatientsVisits(openMRS_id)
                 return jsonify(res)
             else:
-                return jsonify("invalid patient ID")
+                return jsonify("none")
         
 
 class AddRule(Resource):  ##Manage Add Rule Here

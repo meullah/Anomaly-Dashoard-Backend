@@ -5,7 +5,8 @@ from sqlalchemy import create_engine
 import pandas as pd
 import datetime
 import openMRS_API as mr
-
+import requests
+from requests.auth import HTTPBasicAuth
 
 def home_get_monthly_anomalies():
     connection_uri = "mysql+pymysql://root:2403@localhost:3306/ai_engine"
@@ -263,6 +264,9 @@ def get_notifications():
 
     mylist = []
     for key,values in res.items():
+        url = "http://localhost:8080/openmrs-standalone/ws/rest/v1/patient/{}?v=custom:display".format(values['Patient_ID'])
+        res = requests.get(url,auth=HTTPBasicAuth('meullah', 'Ehsan@123')).json()
+        values['Patient_ID'] = res['display'][:6]
         mylist.append(values)
 
     return mylist

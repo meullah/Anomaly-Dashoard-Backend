@@ -2,8 +2,8 @@ import datetime,json
 import requests
 from requests.auth import HTTPBasicAuth
 import json
-
-RECENT_DATETIME = '2020-07-3T08:00:00.145'
+import pickle
+RECENT_DATETIME = pickle.load( open( "RecentDateTime.p", "rb" ) )
 
 
 def get_uuid(openMRS_id):
@@ -44,13 +44,20 @@ def getPatientsVisits(openMRS_id):
             temp['symptoms'] = []
             temp['diagnosis'] = []
             for encounter in data['encounters']:
+                print('%^%'*100,encounter)
                 for provider in encounter['encounterProviders']:
                     if provider['display'].split(':')[0] not in providers_list:
                         providers_list.append(provider['display'].split(':')[0]) 
-
-                if encounter['form']['display']=='Lab Exam':
-                    temp['services']+= encounter['obs'][0]['display'][24:].split(',')
-                elif encounter['form']['display']=='Visit Note':
+                        
+                if not encounter['form'] is None:
+                    if encounter['form']['display']=='Lab Exam':
+                        temp['services']+= encounter['obs'][0]['display'][24:].split(',')
+                    elif encounter['form']['display']=='Visit Note':
+                        if encounter['obs'] != []:
+                            temp['symptoms'] += encounter['obs'][0]['display'][24:].split(',')
+                        for j in encounter['diagnoses']:
+                            diagnosis_links.append(j['links'][0]['uri'])
+                else:
                     if encounter['obs'] != []:
                         temp['symptoms'] += encounter['obs'][0]['display'][24:].split(',')
                     for j in encounter['diagnoses']:
@@ -64,6 +71,10 @@ def getPatientsVisits(openMRS_id):
                         for i in res['diagnosis']['coded']['mappings']:
                             if i['display'][:3] == 'ICD':
                                 temp['diagnosis'].append(i['display'][12:])
+                    else:
+                        temp['diagnosis'].append(res['diagnosis']['nonCoded'])
+
+                                
 
             temp['providers'] = providers_list
 
@@ -81,6 +92,8 @@ def getCompletedVisits():
     req_url = 'http://localhost:8080/openmrs-standalone/ws/rest/v1/visit?includeInactive=true&fromStartDate={}&&v=full'.format(RECENT_DATETIME)
     
     RECENT_DATETIME = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+
+    pickle.dump(RECENT_DATETIME, open( "RecentDateTime.p", "wb" ))
 
     res = requests.get(req_url,auth=HTTPBasicAuth('meullah', 'Ehsan@123')).json()
 
